@@ -221,4 +221,4 @@ The BER/FER performance can be evaluated across different noise conditions using
 
 # License
 
-This project is released under the **MIT License**.
+This project is released under the **BSD 2-Clause License**.
