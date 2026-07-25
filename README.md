@@ -1,63 +1,224 @@
-# Solution to MATLAB and Simulink Challenge project  '192' 'Improve the Accuracy of Satellite Navigation Systems'
+# Solution to the MATLAB & Simulink Challenge Project
+## Improve the Accuracy of Satellite Navigation Systems
 
+**Program:** https://github.com/mathworks/MATLAB-Simulink-Challenge-Project-Hub
 
-[Program link](https://github.com/mathworks/MATLAB-Simulink-Challenge-Project-Hub)
+**Project Description:** https://github.com/mathworks/MATLAB-Simulink-Challenge-Project-Hub/blob/main/projects/Improve%20the%20Accuracy%20of%20Satellite%20Navigation%20Systems/README.md
 
-[Project description link] 
-(https://github.com/mathworks/MATLAB-Simulink-Challenge-Project-Hub/blob/main/projects/Improve%20the%20Accuracy%20of%20Satellite%20Navigation%20Systems/README.md)
-
+---
 
 # BeiDou GF(64) Non-Binary LDPC Communication System
 
-## Project Details
-This project implements a complete, end-to-end simulation of a GNSS communication link compliant with the **BeiDou Navigation Satellite System (BDS) B-CNAV2 Signal In Space Interface Control Document (ICD)**. 
+A complete MATLAB implementation of a **BeiDou B-CNAV2 compliant Non-Binary LDPC communication system** over **GF(64)**. The project implements the entire digital communication chain, from navigation message generation and LDPC encoding to AWGN transmission and iterative decoding using the **Extended Min-Sum (EMS)** algorithm.
 
-The core achievement of this project is the **implementation** of a Galois Field $GF(64)$ Non-Binary Low-Density Parity-Check (LDPC) encoder and an Extended Min-Sum (EMS) iterative decoder. To demonstrate a fundamental understanding of information theory, the LDPC algorithms were engineered using explicit matrix operations and basic loop logic in MATLAB.
-
-**Approach Adopted:**
-* **Transmitter (TX):** Generates a 288-bit payload (PRN, Type, SOW, Data, CRC) and maps it to 48 $GF(64)$ symbols. An LDPC encoder multiplies the systematic symbols by a pre-calculated parity matrix $p = B^{-1}(Au)$ (derived from the Annex $H_{48,96}$ matrix with a row weight of 4). The 96 encoded symbols are converted to a 576-bit stream, appended with the 24-bit BeiDou synchronization preamble (`0xE24DE8`), and passed to Simulink.
-* **Channel:** Modeled in Simulink using BPSK Baseband Modulation, an AWGN channel parameterized by SNR, and a soft-decision BPSK Demodulator that outputs Log-Likelihood Ratios (LLRs).
-* **Receiver (RX):** Strips the preamble and translates the 576 LLRs into a $64 \times 96$ penalty cost matrix. A custom EMS decoder executes a Extended Min-Sum algorithm, using pre-calculated $GF(64)$ arithmetic tables to permute Check-to-Variable and Variable-to-Check messages across the Tanner graph. The decoder limits at 10 iterations to resolve noise conflicts and extract the corrected bits.
+The implementation closely follows the BeiDou B-CNAV2 Interface Control Document (ICD) while emphasizing algorithmic clarity and educational value through explicit Galois Field arithmetic, parity-check matrix operations, and iterative belief propagation.
 
 ---
 
-## How to Run
-### Prerequisites
-To run this simulation, you will need:
-* **MATLAB**.
-* **Simulink**.
-* **Communications Toolbox** (Required only for the basic Simulink Modulation/AWGN channel blocks and `gf()` array initialization).
+# Features
 
-### Step-by-Step Execution
-
-
-1. **Initialize & Encode (TX):** (Run `gf_generator.m` to generate gf(64) elements if not use gf() functions) i. Run `example_message-signal` to generate the message signal ii. `bit_to_gf64.m` to convert bits to gf(64) field iii.`H_matrix_generation` to initialize the H matrix iv.`encoder.m` to apply the Annex matrix encoding v.`symbol_to_bit_conversion.m` for  conversion of gf to bits  and add the preamble using `add_preamble`.
-2. **Run the Channel:** Open `GNSS_Channel.slx`. Ensure the `From Workspace` block is linked to `tx_sim_data`. You can manually adjust the AWGN **SNR (dB)** and the Demodulator **Variance** ($10^{-\text{SNR}/10}$), then click **Run**.
-3. **Decode & Verify (RX):** Run `bit_llr_to_gf.m` to strip the preamble, convert LLRs to gf(64) costs , and `gf_math_table_precompute.m` to precompute gf tables which is going to be used in the decoder , `decoder.m` execute the Min-Sum iterations. Finally, run `ber_test.m` to extract the binary data and print the Bit Error Rate (BER) to the console.
-4. **Automated Waterfall Testing:** To test the system across multiple noise levels automatically, simply run `ber_plot.m`. This script will loop through Simulink SNR values from `-3.0 db` to `+1.5 dB`, decode each frame, and plot the performance curve.
+- Complete end-to-end BeiDou B-CNAV2 communication chain
+- GF(64) arithmetic using precomputed lookup tables
+- Matrix-based Non-Binary LDPC encoder
+- Extended Min-Sum (EMS) decoder with configurable Top-M truncation
+- Tanner graph message passing
+- Soft-decision decoding using Log-Likelihood Ratios (LLRs)
+- Binary Phase Shift Keying (BPSK) modulation
+- AWGN channel simulation
+- BER and FER performance evaluation
+- Automated SNR sweep for waterfall curve generation
 
 ---
 
-## Demo / Results
-*Note: Below is the performance of the system resolving extreme channel noise.*
+# System Architecture
 
-<img width="883" height="810" alt="image" src="https://github.com/user-attachments/assets/47d401be-2869-4fcb-9e9b-f133f179cafb" />
-
-
-<img width="576" height="259" alt="image" src="https://github.com/user-attachments/assets/7fdc82b0-8828-484f-bf47-977e7c9bd11c" />
-
-
-
-
-
-**Expected Results:**
-Due to the rate-$1/2$ nature of the LDPC code, the Bit SNR ($E_b/N_0$) is roughly `3 dB` higher than the Simulink symbol SNR. 
-* At **-3.0 dB Simulink SNR** (approx. 0 dB $E_b/N_0$), the noise overpowers the decoder, resulting in a high error rate (decoder hits maximum iterations).
-* At **-1.5 dB Simulink SNR** (approx. 1.5 dB $E_b/N_0$), the custom EMS decoder successfully fights through the heavy noise, iterating ~8 times to perfectly resolve the Tanner graph.
-* At **0 dB Simulink SNR and above**, the decoder easily achieves a **0.0 BER**, matching theoretical expectations for the BeiDou B-CNAV2 standard.
+```
+Navigation Message
+        │
+        ▼
+ GF(64) Symbol Mapping
+        │
+        ▼
+ Non-Binary LDPC Encoder
+        │
+        ▼
+ BPSK Modulator
+        │
+        ▼
+     AWGN Channel
+        │
+        ▼
+ Soft LLR Generation
+        │
+        ▼
+ EMS LDPC Decoder
+        │
+        ▼
+Decoded Navigation Message
+```
 
 ---
 
-## References
-1. **BeiDou Navigation Satellite System Signal In Space Interface Control Document** - *Open Service Signals B1C and B2a (Test Version), August 2017.* China Satellite Navigation Office. (Used for frame structure, synchronization preamble, and $H_{48,96}$ matrix definitions).
-2. **Declercq, D., & Fossorier, M. (2007).** *Decoding algorithms for nonbinary LDPC codes over GF(q).* IEEE Transactions on Communications. (Reference for Extended Min-Sum algorithm theory).
+# Project Structure
+
+```
+NBLDPC/
+│
+├── main.m                  # Run a single communication simulation
+├── ber_sweep.m             # BER/FER simulation over multiple SNR values
+├── BER_results.mat
+├── ber_plot.pdf
+│
+└── src/
+    ├── buildGF.m
+    ├── buildParityCheckMatrix.m
+    ├── generateNavigationMessage.m
+    ├── ldpcencodegf64.m
+    ├── channel_awgn.m
+    ├── llr2gf64.m
+    ├── ldpcdecodegf64.m
+    ├── ldpcdecodegf64_ems.m
+    ├── ems_combine_messages.m
+    ├── ems_truncate.m
+    ├── runSimulation.m
+    └── ...
+```
+
+---
+
+# How It Works
+
+## Transmitter
+
+- Generates a BeiDou navigation message
+- Converts binary data into GF(64) symbols
+- Encodes the message using the Non-Binary LDPC parity-check matrix
+- Converts the encoded symbols back into bits
+- Modulates using BPSK
+
+---
+
+## Channel
+
+The encoded signal is transmitted through an **Additive White Gaussian Noise (AWGN)** channel.
+
+Noise level is controlled using the desired **Eb/N₀/SNR** during simulation.
+
+---
+
+## Receiver
+
+The receiver performs:
+
+1. Soft-decision demodulation
+2. LLR computation
+3. LLR-to-GF(64) conversion
+4. Iterative EMS decoding
+5. Syndrome verification
+6. Bit reconstruction
+7. BER/FER calculation
+
+The EMS decoder reduces computational complexity by retaining only the **Top-M** most reliable symbol candidates during check-node processing.
+
+---
+
+# Running the Project
+
+## Requirements
+
+- MATLAB R2024b or newer (recommended)
+- Communications Toolbox
+
+---
+
+## Run a Single Simulation
+
+```matlab
+main
+```
+
+The script automatically
+
+- Loads GF(64) lookup tables
+- Builds the parity-check matrix
+- Generates a navigation frame
+- Encodes the message
+- Simulates transmission
+- Decodes using EMS
+- Displays BER, decoder status, and iteration count
+
+---
+
+## Generate BER Curve
+
+```matlab
+ber_sweep
+```
+
+This performs an automatic SNR sweep and computes
+
+- Bit Error Rate (BER)
+- Frame Error Rate (FER)
+
+The generated performance curve is saved as:
+
+```
+ber_plot.pdf
+```
+
+---
+
+# Example Output
+
+```
+=======================================
+ Non-Binary LDPC Demonstration
+=======================================
+
+Decoder    : EMS
+Top-M      : 16
+BER        : 0.000e+00
+Success    : 1
+Iterations : 7
+```
+
+---
+
+# Key Algorithms
+
+- GF(64) finite field arithmetic
+- Matrix-based LDPC encoding
+- Tanner graph belief propagation
+- Extended Min-Sum (EMS) decoding
+- Check-node message truncation
+- Variable-node message updates
+- Syndrome-based early stopping
+
+---
+
+# Performance
+
+The implementation supports configurable
+
+- Decoder iterations
+- Top-M parameter
+- SNR
+- Message length
+
+The BER/FER performance can be evaluated across different noise conditions using the provided simulation scripts.
+
+---
+
+# References
+
+1. **BeiDou Navigation Satellite System Signal In Space Interface Control Document (B1C & B2a Open Service Signals, Test Version, August 2017)**
+
+2. Declercq, D., & Fossorier, M. (2007). *Decoding Algorithms for Non-Binary LDPC Codes over GF(q).* IEEE Transactions on Communications.
+
+3. Davey, M. C., & MacKay, D. J. C. (1998). *Low Density Parity Check Codes over GF(q).*
+
+---
+
+# License
+
+This project is released under the **MIT License**.
