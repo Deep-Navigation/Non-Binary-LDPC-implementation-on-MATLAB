@@ -1,4 +1,4 @@
-# Solution to the MATLAB & Simulink Challenge Project
+# Solution to MATLAB and Simulink Challenge project '192' 'Improve the Accuracy of Satellite Navigation Systems'
 ## Improve the Accuracy of Satellite Navigation Systems
 
 **Program:** https://github.com/mathworks/MATLAB-Simulink-Challenge-Project-Hub
